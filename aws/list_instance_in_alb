@@ -1,0 +1,26 @@
+$ vim /usr/bin/instancelist
+--------------------------------------------------
+#!/bin/bash
+
+region="ap-northeast-1"
+
+case $1 in
+  front)
+    aws_elb_target_group_arn="arn:aws:elasticloadbalancing:xxxxxxxxxxxxxxxxxx";;
+  batch)
+    aws_elb_target_group_arn="arn:aws:elasticloadbalancing:xxxxxxxxxxxxxxxxxx";;
+esac
+
+declare -a instance_ips
+
+for i in $(aws elbv2 describe-target-health --region ${region} --target-group-arn $aws_elb_target_group_arn | grep Id |  awk {'print $2'} | cut -c2-20)
+do
+  instance_ip=$(aws ec2 describe-instances --region ${region} --instance-ids $i | grep PrivateIpAdd | grep "10.0" | head -1 | awk -F ":" '{print $2}' | sed 's/[",]//g' | cut -c 2-)
+  instance_ips+=($instance_ip)
+done
+
+printf '%s\n' "${instance_ips[@]}"
+--------------------------------------------------
+
+$ chmod +x /usr/bin/instancelist
+$ instancelist front|batch
